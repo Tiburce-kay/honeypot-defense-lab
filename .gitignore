@@ -1,0 +1,12 @@
+# Secrets et données d'exécution : jamais dans Git
+*.key
+*_private
+privatekey
+wg0.conf
+auth.conf
+.env
+__pycache__/
+*.pyc
+logs/
+*.log
+*.sqlite
