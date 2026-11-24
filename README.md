@@ -23,6 +23,9 @@ git clone <url-du-depot> && cd honeypot-defense-lab
 make up        # construit et démarre les 10 conteneurs
 make demo      # rejoue les essais du mémoire (≈ 1 min)
 make password  # identifiants du tableau de bord -> http://localhost:9443
+
+# Pour la soutenance, le scénario pas à pas (scan, hydra, honeypots, rapport) :
+#   voir docs/SCENARIO-SOUTENANCE.md
 ```
 
 Résultat attendu de `make demo` :
