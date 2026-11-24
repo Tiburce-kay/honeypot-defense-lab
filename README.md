@@ -18,6 +18,8 @@ Travaux de recherche en sécurité réseau (déception active et détection d'in
 
 ## Démarrage rapide
 
+Première installation sur une machine neuve ? Guide détaillé : [`docs/INSTALLATION.md`](docs/INSTALLATION.md).
+
 Prérequis : Linux, Docker ≥ 24 avec Docker Compose v2, ~3 Go d'espace disque.
 
 ```bash
