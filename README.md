@@ -7,6 +7,8 @@
 
 Travaux de recherche en sécurité réseau (déception active et détection d'intrusion), menés en Licence d'Administration des Réseaux Informatiques (ENEAM, Université d'Abomey-Calavi) à partir d'un besoin réel observé en stage. Le laboratoire d'origine (GNS3 + VirtualBox) est ici **entièrement conteneurisé et reproductible** : une commande suffit pour le relancer, avec les mêmes versions et les mêmes configurations, et rejouer les expériences.
 
+📄 **Rapport de recherche complet (PDF, 14 p.)** : [`docs/rapport-recherche.pdf`](docs/rapport-recherche.pdf)
+
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 ![Suricata](https://img.shields.io/badge/Suricata-7.0.3%20IPS-EF3B2D)
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
