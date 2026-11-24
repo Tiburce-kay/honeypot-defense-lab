@@ -1,6 +1,6 @@
 # Notes techniques : de la VM aux conteneurs
 
-Ce document explique comment le laboratoire GNS3/VirtualBox du mémoire a été transformé
+Ce document explique comment le laboratoire GNS3/VirtualBox d'origine a été transformé
 en environnement Docker reproductible, et pourquoi chaque choix a été fait.
 
 ## 1. Méthode
@@ -9,7 +9,7 @@ en environnement Docker reproductible, et pourquoi chaque choix a été fait.
    pour en extraire le code, les configurations, les unités systemd et la liste des paquets (`dpkg`).
 2. Les versions installées ont été relevées et **figées** dans les Dockerfiles.
 3. Le code d'origine a été copié tel quel, puis adapté au strict minimum (section 3).
-4. Les essais du chapitre 3 du mémoire ont été automatisés dans `scripts/demo.sh`.
+4. Les expériences d'évaluation ont été automatisées dans `scripts/demo.sh`.
 
 ## 2. Versions
 
@@ -24,7 +24,7 @@ en environnement Docker reproductible, et pourquoi chaque choix a été fait.
 | Python | 3.12 | idem |
 | Cowrie | `v3.0.3` | tag Git, identique à la VM |
 | Dionaea | `0.11.0` | image officielle `dinotools/dionaea` (la VM utilisait une compilation Git `0.11.0-7`) |
-| Flask / fpdf2 | 3.0 / 2.8 | versions citées dans le mémoire |
+| Flask / fpdf2 | 3.0 / 2.8 | versions du travail de recherche d'origine |
 
 ## 3. Adaptations du code d'origine
 

@@ -5,7 +5,7 @@
 > vers des **leurres** (Cowrie, Dionaea, services émulés), et **documente** tout dans un
 > tableau de bord SOC temps réel, administrable à distance par **VPN WireGuard**.
 
-Projet de mémoire de Licence en Administration des Réseaux Informatiques (ENEAM, Université d'Abomey-Calavi, 2026), conçu à partir d'un besoin réel observé en stage dans un centre d'appels. Le laboratoire d'origine (GNS3 + VirtualBox) est ici **entièrement conteneurisé** : une commande suffit pour le reproduire, avec les mêmes versions et les mêmes configurations.
+Travaux de recherche en sécurité réseau (déception active et détection d'intrusion), menés en Licence d'Administration des Réseaux Informatiques (ENEAM, Université d'Abomey-Calavi) à partir d'un besoin réel observé en stage. Le laboratoire d'origine (GNS3 + VirtualBox) est ici **entièrement conteneurisé et reproductible** : une commande suffit pour le relancer, avec les mêmes versions et les mêmes configurations, et rejouer les expériences.
 
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 ![Suricata](https://img.shields.io/badge/Suricata-7.0.3%20IPS-EF3B2D)
@@ -21,11 +21,11 @@ Prérequis : Linux, Docker ≥ 24 avec Docker Compose v2, ~3 Go d'espace disque.
 ```bash
 git clone <url-du-depot> && cd honeypot-defense-lab
 make up        # construit et démarre les 10 conteneurs
-make demo      # rejoue les essais du mémoire (≈ 1 min)
+make demo      # rejoue les expériences de bout en bout (≈ 1 min)
 make password  # identifiants du tableau de bord -> http://localhost:9443
 
-# Pour la soutenance, le scénario pas à pas (scan, hydra, honeypots, rapport) :
-#   voir docs/SCENARIO-SOUTENANCE.md
+# Protocole expérimental pas à pas (scan, hydra, honeypots, rapport) :
+#   voir docs/EXPERIENCES.md
 ```
 
 Résultat attendu de `make demo` :
@@ -110,7 +110,7 @@ flowchart LR
 | 7. Tableau de bord SOC | 6 vues temps réel, rapport forensique PDF | Flask, SocketIO, Chart.js, fpdf2 | [`dashboard/`](dashboard/) |
 | 8. Administration à distance | tunnel hôte-à-hôte cloisonné | WireGuard | [`vpn_admin.sh`](defense/scripts/vpn_admin.sh) |
 
-## Résultats du mémoire (laboratoire GNS3)
+## Résultats expérimentaux (laboratoire GNS3 d'origine)
 
 Séance d'évaluation de 40 minutes, 4 439 règles chargées :
 
@@ -170,4 +170,4 @@ Le code et les configurations sont ceux de la VM, extraits de son disque. Les se
 
 ## Auteurs
 
-Tiburce Fatchehoun et Mohamed Diallo — mémoire soutenu le 25 septembre 2026.
+Tiburce Fatchehoun et Mohamed Diallo (2026).

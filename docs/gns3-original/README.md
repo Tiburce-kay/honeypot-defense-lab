@@ -1,6 +1,6 @@
 # Laboratoire GNS3 d'origine
 
-Fichiers du projet GNS3 utilisé pour le mémoire, conservés pour référence.
+Fichiers du projet GNS3 d'origine (nommé « projet de soutenance »), conservés pour référence.
 
 | Fichier | Contenu |
 |---|---|

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# demo.sh — Rejoue les essais du chapitre 3 du mémoire, de bout en bout.
+# demo.sh — Rejoue les expériences du projet de recherche, de bout en bout.
 #   1. Reconnaissance nmap depuis le VLAN Visiteurs -> détection Suricata
 #   2. Redirection dynamique : l'attaquant est inscrit dans l'ipset ATTAQUANTS
 #   3. Session SSH piégée dans Cowrie (root/root sur « srv-prod-01 »)

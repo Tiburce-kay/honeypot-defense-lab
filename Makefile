@@ -9,7 +9,7 @@ up: ## Construit et démarre tout le lab
 	$(DC) up -d --build --wait
 	@echo "Lab prêt. Tableau de bord : http://localhost:9443 (make password) — démo : make demo"
 
-demo: ## Rejoue les essais du mémoire (scan, piégeage, capture, VPN)
+demo: ## Rejoue les expériences (scan, piégeage, capture, VPN)
 	@bash scripts/demo.sh
 
 password: ## Affiche les identifiants du tableau de bord

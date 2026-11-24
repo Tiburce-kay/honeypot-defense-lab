@@ -1,8 +1,12 @@
-# Scénario de démonstration (soutenance)
+# Protocole expérimental
 
-Démonstration défensive du dispositif en laboratoire isolé : on lance des reconnaissances
-et des tentatives d'accès contre l'infrastructure, et on montre que la défense les **détecte,
-les détourne vers les leurres et les documente**, sans jamais exposer les ressources réelles.
+Évaluation défensive du dispositif en laboratoire isolé. On lance des reconnaissances et des
+tentatives d'accès contre l'infrastructure, et on mesure que la défense les **détecte, les
+détourne vers les leurres et les documente**, sans jamais exposer les ressources réelles.
+
+Ce protocole reproduit les expériences décrites dans le travail de recherche à l'origine du
+projet. Il est exécutable de bout en bout, et son automatisation complète se trouve dans
+[`scripts/demo.sh`](../scripts/demo.sh).
 
 Toutes les actions « attaquant » se lancent depuis le poste Kali (`make kali`). Les listes de
 mots de passe (`passwords.txt`, `userlist.txt`, `passlist.txt`) sont déjà dans `/root`.
