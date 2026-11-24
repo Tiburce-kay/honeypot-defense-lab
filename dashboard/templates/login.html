@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SOC Control - Authentification</title>
+<style>
+:root{--bg:#060a12;--panel:#0d1622;--border:#16263a;--cyan:#00e5ff;
+  --txt:#c5d6e8;--txt-dim:#5a7390;--rouge:#ff4d5e;--ambre:#ffb13b;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--txt);font-family:'Segoe UI',Roboto,sans-serif;
+  height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(0,229,255,0.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,229,255,0.04) 1px,transparent 1px);
+  background-size:40px 40px;z-index:0;}
+body::after{content:'';position:fixed;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--cyan),transparent);
+  animation:scanline 6s linear infinite;opacity:0.5;z-index:1;}
+@keyframes scanline{0%{top:0;}100%{top:100%;}}
+.wrap{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;}
+.logo{margin-bottom:28px;text-align:center;}
+.logo .ring{width:80px;height:80px;border-radius:50%;border:2px solid var(--cyan);
+  margin:0 auto 16px;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 30px rgba(0,229,255,0.4),inset 0 0 20px rgba(0,229,255,0.2);
+  animation:rotate 8s linear infinite;position:relative;}
+.logo .ring::before{content:'';position:absolute;inset:-2px;border-radius:50%;
+  border:2px solid transparent;border-top-color:var(--cyan);animation:rotate 2s linear infinite;}
+@keyframes rotate{100%{transform:rotate(360deg);}}
+.logo .ring span{font-size:2rem;color:var(--cyan);text-shadow:0 0 14px var(--cyan);}
+.logo h1{font-size:1.4rem;color:var(--cyan);letter-spacing:4px;font-weight:700;
+  text-shadow:0 0 16px rgba(0,229,255,0.5);}
+.logo .sub{font-size:0.7rem;color:var(--txt-dim);letter-spacing:3px;margin-top:6px;}
+.card{background:rgba(13,22,34,0.85);backdrop-filter:blur(10px);
+  border:1px solid var(--border);border-radius:14px;padding:36px 40px;width:380px;
+  box-shadow:0 8px 40px rgba(0,0,0,0.5),0 0 0 1px rgba(0,229,255,0.1);}
+.card .ttl{font-size:0.78rem;color:var(--cyan);letter-spacing:2px;text-transform:uppercase;
+  margin-bottom:24px;text-align:center;display:flex;align-items:center;gap:10px;justify-content:center;}
+.card .ttl::before,.card .ttl::after{content:'';height:1px;flex:1;
+  background:linear-gradient(90deg,transparent,var(--border));}
+.card .ttl::after{background:linear-gradient(90deg,var(--border),transparent);}
+label{display:block;font-size:0.72rem;color:var(--txt-dim);letter-spacing:1px;
+  margin-bottom:8px;margin-top:18px;text-transform:uppercase;}
+.field{position:relative;}
+.field .ic{position:absolute;left:14px;top:50%;transform:translateY(-50%);
+  color:var(--txt-dim);font-size:0.95rem;}
+input{width:100%;padding:13px 14px 13px 40px;background:var(--bg);
+  border:1px solid var(--border);border-radius:8px;color:var(--txt);
+  font-family:inherit;font-size:0.92rem;transition:all 0.2s;}
+input:focus{outline:none;border-color:var(--cyan);
+  box-shadow:0 0 0 3px rgba(0,229,255,0.12),0 0 16px rgba(0,229,255,0.15);}
+button{width:100%;margin-top:28px;padding:14px;
+  background:linear-gradient(135deg,var(--cyan),#00a8c0);color:#06121a;
+  border:none;border-radius:8px;font-family:inherit;font-weight:700;font-size:0.9rem;
+  letter-spacing:1.5px;cursor:pointer;transition:all 0.2s;
+  box-shadow:0 0 20px rgba(0,229,255,0.3);}
+button:hover{transform:translateY(-1px);box-shadow:0 0 28px rgba(0,229,255,0.5);}
+button:active{transform:translateY(0);}
+.err{background:rgba(255,77,94,0.12);border:1px solid rgba(255,77,94,0.3);
+  color:var(--rouge);padding:12px;border-radius:8px;font-size:0.8rem;text-align:center;
+  margin-top:18px;display:flex;align-items:center;gap:8px;justify-content:center;}
+.foot{margin-top:24px;text-align:center;font-size:0.68rem;color:var(--txt-dim);
+  letter-spacing:1px;}
+.secure{display:inline-flex;align-items:center;gap:6px;color:var(--ambre);
+  margin-top:10px;font-size:0.68rem;}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="logo">
+      <div class="ring"><span>&#9673;</span></div>
+      <h1>SOC CONTROL</h1>
+      <div class="sub">SECURITY OPERATIONS CENTER</div>
+    </div>
+    <div class="card">
+      <div class="ttl">Authentification requise</div>
+      <form method="POST">
+        <label>Identifiant</label>
+        <div class="field">
+          <span class="ic">&#128100;</span>
+          <input type="text" name="username" autocomplete="off" autofocus placeholder="Nom d'utilisateur">
+        </div>
+        <label>Mot de passe</label>
+        <div class="field">
+          <span class="ic">&#128274;</span>
+          <input type="password" name="password" autocomplete="off" placeholder="Mot de passe">
+        </div>
+        <button type="submit">SE CONNECTER</button>
+      </form>
+      {% if error %}<div class="err">&#9888; {{ error }}</div>{% endif %}
+      <div class="foot">
+        Systeme de defense reseau &middot; Acces restreint
+        <div class="secure">&#128274; Connexion chiffree &middot; Acces journalise</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

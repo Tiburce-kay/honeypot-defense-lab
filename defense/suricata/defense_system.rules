@@ -1,0 +1,48 @@
+# SYN scan (nmap -sS) — direction toserver uniquement
+drop tcp any any -> $HOME_NET !22 (msg:"SCAN SYN scan detecte"; \
+    flags:S,12; \
+    flow:to_server; \
+    threshold:type threshold,track by_src,count 3,seconds 2; \
+    classtype:network-scan; sid:1000001; rev:6;)
+
+# NULL scan (nmap -sN)
+drop tcp any any -> $HOME_NET any (msg:"SCAN NULL scan detecte"; \
+    flags:0; \
+    threshold:type threshold,track by_src,count 2,seconds 2; \
+    classtype:network-scan; sid:1000002; rev:6;)
+
+# XMAS scan (nmap -sX)
+drop tcp any any -> $HOME_NET any (msg:"SCAN XMAS scan detecte"; \
+    flags:FPU; \
+    threshold:type threshold,track by_src,count 2,seconds 2; \
+    classtype:network-scan; sid:1000003; rev:6;)
+
+# FIN scan (nmap -sF)
+drop tcp any any -> $HOME_NET any (msg:"SCAN FIN scan detecte"; \
+    flags:F,12; \
+    threshold:type threshold,track by_src,count 2,seconds 2; \
+    classtype:network-scan; sid:1000004; rev:6;)
+
+# Ping sweep
+#drop icmp any any -> $HOME_NET any (msg:"SCAN Ping sweep detecte"; \
+    itype:8; \
+    threshold:type threshold,track by_src,count 2,seconds 2; \
+    classtype:network-scan; sid:1000005; rev:6;)
+
+# Scan massif fallback
+drop tcp any any -> $HOME_NET !22 (msg:"SCAN Scan massif detecte"; \
+    flags:S,12; \
+    flow:to_server; \
+    threshold:type threshold,track by_src,count 10,seconds 2; \
+    classtype:network-scan; sid:1000006; rev:6;)
+
+# UDP scan
+drop udp any any -> $HOME_NET !53 (msg:"SCAN UDP scan detecte"; \
+    threshold:type threshold,track by_src,count 5,seconds 2; \
+    classtype:network-scan; sid:1000007; rev:6;)
+
+# --- VPN d'administration WireGuard (vpn_admin.sh) : trafic legitime ---
+pass udp any any -> 192.168.10.10 51820 (msg:"VPN admin WireGuard - entrant autorise"; sid:1000100; rev:1;)
+pass udp 192.168.10.10 51820 -> any any (msg:"VPN admin WireGuard - sortant autorise"; sid:1000101; rev:1;)
+pass ip 10.99.0.0/24 any -> 10.99.0.1 any (msg:"VPN admin - trafic interne au tunnel"; sid:1000102; rev:1;)
+pass ip 10.99.0.1 any -> 10.99.0.0/24 any (msg:"VPN admin - reponses du serveur"; sid:1000103; rev:1;)
