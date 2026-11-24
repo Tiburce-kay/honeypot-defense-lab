@@ -23,7 +23,11 @@ filtre() { grep -vE 'post-quantum|store now|upgraded|WARNING|Warning: Permanentl
 $DC ps --status running --services | grep -qx defense || { echo "Le lab n'est pas démarré : make up"; exit 1; }
 
 titre "0. État initial"
+# Repartir d'un état neuf : vider l'ipset et réinitialiser le délai anti-rafale
+# (60 s par IP, en mémoire) du module de consolidation.
 $DC exec -T defense ipset flush ATTAQUANTS
+$DC exec -T defense supervisorctl restart consolidation >/dev/null
+sleep 1
 echo "  ipset ATTAQUANTS vidé : l'attaquant $ATK n'est pas encore connu"
 
 titre "1. Reconnaissance : nmap -sS depuis la Kali ($ATK, VLAN 40)"
