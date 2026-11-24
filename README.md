@@ -170,6 +170,6 @@ Le code et les configurations sont ceux de la VM, extraits de son disque. Les se
 - Envoi des événements vers un SIEM (Wazuh, Elastic).
 - Leurres à fidélité adaptative : basculer un attaquant vers un leurre plus riche quand il s'engage.
 
-## Auteurs
+## Auteur
 
-Tiburce Fatchehoun et Mohamed Diallo (2026).
+Tiburce Fatchehoun (2026) — Licence en Administration des Réseaux Informatiques, ENEAM, Université d'Abomey-Calavi.
