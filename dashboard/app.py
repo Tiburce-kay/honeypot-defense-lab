@@ -31,7 +31,7 @@ except ImportError:
     HAS_PSUTIL = False
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'defense-soc-dashboard-change-me'
+app.config['SECRET_KEY'] = os.environ.get('DASHBOARD_SECRET_KEY') or os.urandom(32).hex()
 socketio = SocketIO(app, async_mode='threading', cors_allowed_origins="*")
 
 AUTH_FILE = '/home/server/dashboard/auth.conf'
@@ -131,13 +131,31 @@ def tail_lines(path, max_lines=MAX_EVENTS, block=8192):
 
 
 # ---------- Sources de donnees ----------
+# Lab Docker : pas de systemd. On verifie la presence du processus de chaque
+# "service" (le conteneur du dashboard partage l'espace PID du serveur de defense).
+PROCESSUS_SERVICES = {
+    "defense-iptables": "^farpd ",
+    "suricata-ips":     "^/usr/bin/suricata ",
+    "defense-modules":  "modules/consolidation.py",
+    "cowrie":           "twistd .*cowrie",
+    "dionaea":          "^/opt/dionaea/bin/dionaea ",
+    "dashboard":        "dashboard/app.py",
+}
+HAS_SYSTEMD = os.path.isdir('/run/systemd/system')
+
+
 def get_services_status():
     result = {}
     for svc in SERVICES:
         try:
-            out = subprocess.run(["systemctl", "is-active", svc],
-                                 capture_output=True, text=True, timeout=5)
-            result[svc] = out.stdout.strip()
+            if HAS_SYSTEMD:
+                out = subprocess.run(["systemctl", "is-active", svc],
+                                     capture_output=True, text=True, timeout=5)
+                result[svc] = out.stdout.strip()
+            else:
+                out = subprocess.run(["pgrep", "-f", PROCESSUS_SERVICES[svc]],
+                                     capture_output=True, text=True, timeout=5)
+                result[svc] = "active" if out.returncode == 0 else "inactive"
         except Exception:
             result[svc] = "unknown"
     return result

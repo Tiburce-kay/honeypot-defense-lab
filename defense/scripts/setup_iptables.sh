@@ -2,6 +2,9 @@
 # ============================================================
 # setup_iptables.sh — VERSION FINALE PROPRE
 # ============================================================
+# Lab Docker : interface eth0 (enp0s3 dans la VM d origine).
+IFACE="${DEFENSE_IFACE:-enp0s3}"
+# ============================================================
 
 # 1. Routage IP
 sysctl -w net.ipv4.ip_forward=1
@@ -21,20 +24,20 @@ ipset add HONEYD_IPS 192.168.10.40 2>/dev/null || true
 ipset add HONEYD_IPS 192.168.20.20 2>/dev/null || true
 ipset add HONEYD_IPS 192.168.10.50 2>/dev/null || true
 
-# 4. IPs fictives Honeyd sur enp0s3
-ip addr add 192.168.10.20/24 dev enp0s3 2>/dev/null || true
-ip addr add 192.168.10.30/24 dev enp0s3 2>/dev/null || true
-ip addr add 192.168.10.40/24 dev enp0s3 2>/dev/null || true
-ip addr add 192.168.20.20/24 dev enp0s3 2>/dev/null || true
-ip addr add 192.168.10.50/24 dev enp0s3 2>/dev/null || true
+# 4. IPs fictives Honeyd sur l interface du serveur
+ip addr add 192.168.10.20/24 dev "$IFACE" 2>/dev/null || true
+ip addr add 192.168.10.30/24 dev "$IFACE" 2>/dev/null || true
+ip addr add 192.168.10.40/24 dev "$IFACE" 2>/dev/null || true
+ip addr add 192.168.20.20/24 dev "$IFACE" 2>/dev/null || true
+ip addr add 192.168.10.50/24 dev "$IFACE" 2>/dev/null || true
 
 # ARP pour les IPs fictives
 pkill -9 farpd 2>/dev/null; pkill -9 arpd 2>/dev/null; sleep 1
 sleep 1
-farpd -i enp0s3 192.168.10.20 192.168.10.30 192.168.10.40 192.168.20.20 192.168.10.50 &
+farpd -i "$IFACE" 192.168.10.20 192.168.10.30 192.168.10.40 192.168.20.20 192.168.10.50 &
 
 # Proxy ARP pour VLAN20
-echo 1 > /proc/sys/net/ipv4/conf/enp0s3/proxy_arp 2>/dev/null || true
+echo 1 > /proc/sys/net/ipv4/conf/$IFACE/proxy_arp 2>/dev/null || true
 
 # 5. Chaîne custom RST
 iptables -N BLOCK_RST_OUT 2>/dev/null || true
@@ -145,7 +148,7 @@ iptables -t nat -A PREROUTING \
 # ── SNAT retour Cowrie ────────────────────────────────────────
 iptables -t nat -A POSTROUTING \
     -p tcp --sport 2222 \
-    -o enp0s3 \
+    -o "$IFACE" \
     -j SNAT --to-source 192.168.10.10
 
 # ============================================================
@@ -180,7 +183,12 @@ iptables -I INPUT 1 -p tcp --dport 2222 -m state --state NEW ! -d 192.168.10.10 
 echo "iptables + ipset OK"
 
 # Re-applique les regles du tunnel VPN (prioritaires sur les redirections Cowrie)
-systemctl is-active --quiet wg-quick@wg0 && bash /home/server/vpn_admin.sh pare-feu-up || true
+# (VM : service systemd wg-quick@wg0 ; conteneur : pas de systemd, on teste l'interface)
+if [ -d /run/systemd/system ]; then
+    systemctl is-active --quiet wg-quick@wg0 && bash /home/server/vpn_admin.sh pare-feu-up || true
+else
+    ip link show wg0 >/dev/null 2>&1 && bash /home/server/vpn_admin.sh pare-feu-up || true
+fi
 
 # Garde du tableau de bord (port 9443) : injoignable sur les adresses des leurres
 bash /home/server/vpn_admin.sh garde-tableau || true

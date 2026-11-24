@@ -21,11 +21,15 @@ LOG_DIR       = os.path.join(BASE_DIR, "logs")
 LOG_FILE      = os.path.join(LOG_DIR, "decision.log")
 
 VLAN_ADMIN    = ipaddress.ip_network("192.168.99.0/24")
-IP_HONEYPOT   = "192.168.10.10"
+IP_HONEYPOT   = os.environ.get("DEFENSE_IP", "192.168.10.10")
 PORT_HONEYPOT = 2222
 IPSET_NAME    = "ATTAQUANTS"
-GATEWAY_R1    = "192.168.10.254"  # IP NAT inter-VLAN (gateway R1)
-IPS_PROTEGEES = {"192.168.10.10", "192.168.10.254", "127.0.0.1"}
+# Valeurs par defaut = celles de la VM d'origine.
+# Dans le lab Docker, R1 route sans NAT inter-VLAN : DEFENSE_GATEWAY_NAT est vide
+# et l'adresse reelle de l'attaquant arrive directement sur le serveur.
+GATEWAY_R1    = os.environ.get("DEFENSE_GATEWAY_NAT", "192.168.10.254")  # IP NAT inter-VLAN (gateway R1)
+INTERFACE     = os.environ.get("DEFENSE_IFACE", "enp0s3")
+IPS_PROTEGEES = {IP_HONEYPOT, GATEWAY_R1, "127.0.0.1"} - {""}
 
 ips_redirigees: set = set()
 
@@ -74,19 +78,20 @@ def appliquer_redirection(ip_src: str) -> None:
             return
 
         # 2. Ajouter aussi la gateway R1 (IP après NAT inter-VLAN)
-        gw_result = subprocess.run(
-            ["ipset", "add", IPSET_NAME, GATEWAY_R1, "timeout", "3600"],
-            capture_output=True, text=True
-        )
-        if gw_result.returncode == 0:
-            logger.info(f"Gateway R1 {GATEWAY_R1} ajoutée à l'ipset")
-        elif "already added" in gw_result.stderr:
-            logger.debug(f"Gateway R1 {GATEWAY_R1} déjà dans l'ipset")
-        else:
-            logger.error(f"Échec ipset add gateway : {gw_result.stderr.strip()}")
+        if GATEWAY_R1:
+            gw_result = subprocess.run(
+                ["ipset", "add", IPSET_NAME, GATEWAY_R1, "timeout", "3600"],
+                capture_output=True, text=True
+            )
+            if gw_result.returncode == 0:
+                logger.info(f"Gateway R1 {GATEWAY_R1} ajoutée à l'ipset")
+            elif "already added" in gw_result.stderr:
+                logger.debug(f"Gateway R1 {GATEWAY_R1} déjà dans l'ipset")
+            else:
+                logger.error(f"Échec ipset add gateway : {gw_result.stderr.strip()}")
 
         # 3. Bloquer RST sortants vers les deux IPs
-        for ip in [ip_src, GATEWAY_R1]:
+        for ip in [i for i in (ip_src, GATEWAY_R1) if i]:
             subprocess.run([
                 "iptables", "-A", "BLOCK_RST_OUT",
                 "-d", ip, "-p", "tcp",
@@ -97,13 +102,13 @@ def appliquer_redirection(ip_src: str) -> None:
         check = subprocess.run([
             "iptables", "-t", "nat", "-C", "POSTROUTING",
             "-p", "tcp", "--sport", "2222",
-            "-o", "enp0s3", "-j", "SNAT", "--to-source", "192.168.10.10"
+            "-o", INTERFACE, "-j", "SNAT", "--to-source", IP_HONEYPOT
         ], capture_output=True)
         if check.returncode != 0:
             subprocess.run([
                 "iptables", "-t", "nat", "-A", "POSTROUTING",
                 "-p", "tcp", "--sport", "2222",
-                "-o", "enp0s3", "-j", "SNAT", "--to-source", "192.168.10.10"
+                "-o", INTERFACE, "-j", "SNAT", "--to-source", IP_HONEYPOT
             ], check=False)
 
         # ips_redirigees.add(ip_src)  # Désactivé — on utilise l'ipset réel
@@ -111,7 +116,7 @@ def appliquer_redirection(ip_src: str) -> None:
             f"\n{sep}\n"
             f"REDIRECTION ACTIVÉE\n"
             f"IP Suricata  : {ip_src}\n"
-            f"IP NAT (R1)  : {GATEWAY_R1}\n"
+            f"IP NAT (R1)  : {GATEWAY_R1 or '(aucune)'}\n"
             f"Destination  : {IP_HONEYPOT}:{PORT_HONEYPOT}\n"
             f"Méthode      : ipset ATTAQUANTS (instantané)\n"
             f"Expiration   : 3600s\n"

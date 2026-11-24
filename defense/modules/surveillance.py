@@ -31,8 +31,10 @@ from scapy.all import sniff, IP, TCP, UDP, ICMP
 # Configuration
 # ---------------------------------------------------------------------------
 
-INTERFACE   = "enp0s3"
-IP_SERVEUR  = "192.168.10.10"
+# Valeurs par defaut = celles de la VM d'origine ; surchargeables par
+# variables d'environnement (conteneur Docker : interface eth0).
+INTERFACE   = os.environ.get("DEFENSE_IFACE", "enp0s3")
+IP_SERVEUR  = os.environ.get("DEFENSE_IP", "192.168.10.10")
 VLAN_ADMIN  = ipaddress.ip_network("192.168.99.0/24")
 SEUIL_PORTS = 5      # Reduit : on log plus tot (Suricata a deja agi)
 SEUIL_TEMPS = 30

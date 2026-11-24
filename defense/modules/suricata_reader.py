@@ -32,7 +32,7 @@ LOG_FILE      = os.path.join(LOG_DIR, "suricata_reader.log")
 SOCKET_PATH   = os.path.join(BASE_DIR, "sockets", "consolidation.sock")
 
 EVE_FILE      = "/var/log/suricata/eve.json"
-IP_SERVEUR    = "192.168.10.10"
+IP_SERVEUR    = os.environ.get("DEFENSE_IP", "192.168.10.10")
 VLAN_ADMIN    = ipaddress.ip_network("192.168.99.0/24")
 
 # Intervalle de lecture du fichier eve.json (en secondes)
