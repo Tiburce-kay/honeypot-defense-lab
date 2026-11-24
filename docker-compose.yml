@@ -1,0 +1,181 @@
+# =============================================================================
+#  Lab « détection et leurrage de scans réseau » — version conteneurisée
+#  Reproduit la topologie GNS3 du mémoire : R1 + ESW1 + 5 VLANs + 3 VMs
+#
+#  VLAN 10  Défense      192.168.10.0/24  serveur de défense .10, leurres .20-.50
+#  VLAN 20  Serveurs     192.168.20.0/24  leurre 192.168.20.20 (routé via .10)
+#  VLAN 30  Utilisateurs 192.168.30.0/24  pc1 .2, pc2 .3
+#  VLAN 40  Visiteurs    192.168.40.0/24  attaquant Kali .2
+#  VLAN 99  Admin        192.168.99.0/24  poste admin .2 (jamais redirigé)
+#
+#  R1 a l'adresse .1 dans chaque VLAN ; .254 est le pont Docker (hôte).
+# =============================================================================
+name: honeypot-defense-lab
+
+# Chaque VLAN est un réseau macvlan sans interface parente : Docker crée un
+# commutateur virtuel isolé (comme ESW1), qui ne passe pas par le pare-feu de
+# l'hôte. Avec des ponts Docker classiques, la protection « raw » de Docker
+# (v28+) jette les paquets routés par R1 d'un VLAN à l'autre.
+x-vlan: &vlan
+  driver: macvlan
+
+networks:
+  wan:                      # sortie Internet de R1 + relais du dashboard
+    driver: bridge
+    ipam:
+      config: [{ subnet: 172.30.99.0/24, gateway: 172.30.99.1 }]
+  vlan10:
+    <<: *vlan
+    ipam:
+      config: [{ subnet: 192.168.10.0/24, gateway: 192.168.10.254 }]
+  vlan20:
+    <<: *vlan
+    ipam:
+      config: [{ subnet: 192.168.20.0/24, gateway: 192.168.20.254 }]
+  vlan30:
+    <<: *vlan
+    ipam:
+      config: [{ subnet: 192.168.30.0/24, gateway: 192.168.30.254 }]
+  vlan40:
+    <<: *vlan
+    ipam:
+      config: [{ subnet: 192.168.40.0/24, gateway: 192.168.40.254 }]
+  vlan99:
+    <<: *vlan
+    ipam:
+      config: [{ subnet: 192.168.99.0/24, gateway: 192.168.99.254 }]
+
+volumes:
+  lab-secrets:      # clés WireGuard/SSH et mot de passe du dashboard, générés au 1er démarrage
+  lab-state:        # sauvegarde périodique de l'ipset ATTAQUANTS
+  suricata-logs:
+  defense-logs:
+  cowrie-logs:
+  cowrie-data:
+  dionaea-data:
+
+services:
+  # ---------------------------------------------------------------- R1 (Cisco c7200)
+  r1:
+    build: ./router
+    hostname: R1
+    cap_add: [NET_ADMIN]
+    sysctls:
+      net.ipv4.ip_forward: 1
+    environment:
+      WAN_IP: 172.30.99.2
+      WAN_GW: 172.30.99.1
+    networks:
+      wan:    { ipv4_address: 172.30.99.2 }
+      vlan10: { ipv4_address: 192.168.10.1 }
+      vlan20: { ipv4_address: 192.168.20.1 }
+      vlan30: { ipv4_address: 192.168.30.1 }
+      vlan40: { ipv4_address: 192.168.40.1 }
+      vlan99: { ipv4_address: 192.168.99.1 }
+
+  # ---------------------------------------------------- Serveur de défense (VM Ubuntu)
+  defense:
+    build: ./defense
+    hostname: server
+    depends_on: [r1]
+    cap_add: [NET_ADMIN, NET_RAW]
+    sysctls:
+      net.ipv4.ip_forward: 1
+      net.ipv4.conf.all.proxy_arp: 1
+    environment:
+      DEFENSE_IFACE: eth0
+      DEFENSE_IP: 192.168.10.10
+      DEFENSE_GATEWAY_NAT: ""        # pas de NAT inter-VLAN sur R1 (voir docs/NOTES.md)
+      ROUTER_IP: 192.168.10.1
+      DASHBOARD_FROM_HOST: "1"
+      HOST_GATEWAY: 192.168.10.253   # adresse du relais dashboard-proxy
+    networks:
+      vlan10: { ipv4_address: 192.168.10.10 }
+    volumes:
+      - lab-secrets:/lab-secrets
+      - lab-state:/lab-state
+      - suricata-logs:/var/log/suricata
+      - defense-logs:/home/server/defense_system/logs
+
+  # Les honeypots et le dashboard partagent la pile réseau du serveur de défense,
+  # exactement comme dans la VM où tout tournait sur la même machine.
+  cowrie:
+    build: ./cowrie
+    network_mode: service:defense
+    pid: service:defense
+    depends_on: { defense: { condition: service_healthy, restart: true } }
+    volumes:
+      - cowrie-logs:/home/cowrie/cowrie/var/log/cowrie
+      - cowrie-data:/home/cowrie/cowrie/var/lib/cowrie
+
+  dionaea:
+    build: ./dionaea
+    network_mode: service:defense
+    pid: service:defense
+    depends_on: { defense: { condition: service_healthy, restart: true } }
+    volumes:
+      - dionaea-data:/opt/dionaea/var/lib/dionaea
+
+  dashboard:
+    build: ./dashboard
+    network_mode: service:defense
+    pid: service:defense             # pour l'état des services (pgrep)
+    cap_add: [NET_ADMIN]             # lecture de l'ipset ATTAQUANTS
+    depends_on: { defense: { condition: service_healthy, restart: true } }
+    volumes:
+      - lab-secrets:/lab-secrets
+      - suricata-logs:/var/log/suricata:ro
+      - cowrie-logs:/home/cowrie/cowrie/var/log/cowrie:ro
+      - dionaea-data:/opt/dionaea/var/lib/dionaea:ro
+
+  # Relais TCP : rend le dashboard joignable depuis la machine hôte
+  # (http://localhost:9443). Les VLANs macvlan ne permettent pas la publication
+  # de ports ; le relais se présente au serveur avec l'adresse 192.168.10.253.
+  dashboard-proxy:
+    image: alpine/socat:1.8.0.0
+    command: TCP-LISTEN:9443,fork,reuseaddr TCP:192.168.10.10:9443
+    depends_on: [dashboard]
+    ports:
+      - "127.0.0.1:9443:9443"
+    networks:
+      wan:    { ipv4_address: 172.30.99.3 }
+      vlan10: { ipv4_address: 192.168.10.253 }
+
+  # ------------------------------------------------------------------------- Postes
+  attacker:
+    build: ./attacker
+    hostname: kali
+    cap_add: [NET_ADMIN, NET_RAW]
+    environment: { GATEWAY: 192.168.40.1 }
+    depends_on: { defense: { condition: service_healthy, restart: true } }
+    networks:
+      vlan40: { ipv4_address: 192.168.40.2 }
+
+  admin:
+    build: ./admin
+    hostname: admin
+    cap_add: [NET_ADMIN]
+    environment:
+      GATEWAY: 192.168.99.1
+      VPN_ENDPOINT: 192.168.10.10:51820
+    depends_on: { defense: { condition: service_healthy, restart: true } }
+    volumes:
+      - lab-secrets:/lab-secrets:ro
+    networks:
+      vlan99: { ipv4_address: 192.168.99.2 }
+
+  pc1:
+    build: ./client
+    hostname: PC1
+    cap_add: [NET_ADMIN]
+    environment: { GATEWAY: 192.168.30.1 }
+    networks:
+      vlan30: { ipv4_address: 192.168.30.2 }
+
+  pc2:
+    build: ./client
+    hostname: PC2
+    cap_add: [NET_ADMIN]
+    environment: { GATEWAY: 192.168.30.1 }
+    networks:
+      vlan30: { ipv4_address: 192.168.30.3 }
