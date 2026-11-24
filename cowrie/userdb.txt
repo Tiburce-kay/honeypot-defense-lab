@@ -1,0 +1,2 @@
+# Identifiants acceptes par le faux serveur (memoire, section 5.4) - ASCII uniquement
+root:x:root

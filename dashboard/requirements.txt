@@ -1,0 +1,5 @@
+# Versions de la VM d'origine (mémoire, tableau 3 : Flask 3.0, fpdf2 2.8)
+Flask==3.0.3
+Flask-SocketIO==5.3.6
+fpdf2==2.8.1
+psutil==5.9.8
